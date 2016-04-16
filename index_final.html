@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- load the d3.js library -->
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+    <style>
+      body {
+        font: 10px sans-serif;
+      }
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+      }
+      .tooltip {
+        position: absolute;
+        width: 100px;
+        height: 20px;
+        pointer-events: none;
+        background: white;
+        border-radius: 2px;
+        padding: 6px;
+        color: black;
+        font-weight: bold;
+      }
+    </style>
+    <script type="text/javascript">
+      function draw(data) {
+         
+        //Define dimensions of the graph  
+        var margin = {top: 30, right: 20, bottom: 60, left: 100},
+            width = 600 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
+
+        // Create axis scale mapping values -> pixels
+        var x = d3.scale.linear()
+            .range([0, width])
+            .domain([0,30]);
+
+        var y = d3.scale.linear()
+            .range([height, 0])
+            .domain([0,60]);
+
+        // /definition of axes
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        // Add the svg canvas
+        var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        //Add area for tooltip
+        var tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            //.style("opacity", 1);
+
+          //Draw circles  
+          svg.selectAll("circle")
+              .data(data)
+              .enter().append("circle")
+              .attr("r", 3.5)
+              .attr("cx", function(d) { return x(d.wind); })
+              .attr("cy", function(d) { return y(d.price); })
+              .style("fill", 'rgb(49,130,189)') //colorbrwer2.org
+              // Add tooltip and colo change
+              .on("mouseover",function(d) {
+                tooltip.transition()
+                  .duration(0)
+                  .style("opacity",0.9);
+                  tooltip.html("Wind: " + d.wind.toFixed([1])+ " GW" + "<br/>" + "Price: " + d.price + " EUR/MWh")
+                  .style("left",(d3.event.pageX)+"px")
+                  .style("top",(d3.event.pageY-30)+"px")
+                  d3.select(this).attr("r", 3.5).style("fill", "red");
+              })
+              .on("mouseout",function(d) {
+                tooltip.transition()
+                .duration(0)
+                .style("opacity",0);
+                d3.select(this).attr("r", 3.5).style("fill", 'rgb(49,130,189)');
+              });
+
+
+          // Add the x axis
+          svg.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(xAxis)
+
+          // Add the y axis
+          svg.append("g")
+              .attr("class", "y axis")
+              .call(yAxis)
+
+          // Add the text label for the x axis
+          svg.append("text")
+            .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom/2) + ")")
+            .style("text-anchor", "middle")
+            .text("Average daily wind production (GW)");
+
+          // Add the text label for the y axis
+          svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left/2)
+            .attr("x",0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Electricity Price (EUR/MWh)");
+
+
+        };
+
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+
+  //Read the data
+  d3.tsv("wind_price.tsv", function(d) {
+      d['wind'] = +d['wind']/1000;
+      d['price'] = +d['price'];
+      return d;
+  }, draw);
+  </script>
+</body>
+<h1>Impact of German wind energy on market prices for electricity</h1>
+<p>The scatterplot shows the relation between the average daily wind energy and the whole sale electricity price in Germany. Each dot represents a weekday (excluding weekends/mondays) in the year 2015. When there is more wind energy, prices for electricity tend to be lower.</p>
+</html>

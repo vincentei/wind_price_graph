@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- load the d3.js library -->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    
+    <style>
+      h2 {
+        color: black;
+        text-align: center;
+      }
+
+      .axis {
+        font-family: arial;
+        font-size: 0.6em;
+      }
+
+      path {
+        fill: none;
+        stroke: white;
+        stroke-width: 2px;
+      }
+
+      
+      .line {
+        fill: none;
+        stroke: #4eb0bb;
+        stroke-width: 2px;
+      }
+    </style>
+
+    <script type="text/javascript">
+      function draw(data) {
+          
+          //Define dimensions of the graph
+          "use strict";
+          var margin = 50,
+              width = 1500 - margin,
+              height = 400 - margin;
+
+          // Add the svg canvas
+          var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width + margin)
+            .attr("height", height + margin)
+            .append('g')
+            .attr('class','chart');
+
+          // Create axis scale mapping values -> pixels
+          var hour_scale= d3.scale.linear()
+            .range([margin, width])
+            .domain([1,209])
+
+          var price_scale = d3.scale.linear()
+            .range([height, margin])
+            .domain([0,60])
+
+          // /definition of axes
+          var hour_axis = d3.svg.axis()
+            .scale(hour_scale)
+            .orient("bottom")
+            //.ticks(24)
+
+          var price_axis = d3.svg.axis()
+            .scale(price_scale)
+            .orient("left");
+
+          // Definition of line
+          var line = d3.svg.line()
+              //debugger;
+              .x(function(d) { return hour_scale(d.day); })
+              .y(function(d) { return price_scale(d.price); });
+        
+          //update year
+          function update(day) {
+              //var filtered = function(d) {return  d[day] <= day};
+              //debugger;
+            //svg.selectAll("path").remove();
+            
+
+            var filtered = data.filter(function(d) {
+              return d.day <= day;
+            })
+            
+            debugger;
+            svg.append("path")
+            .datum(data)
+            .attr("class", "line")
+            .attr("d", line(filtered));
+          };
+
+
+          var days = [];
+          
+          for(var i = 2; i < 209; i += 1) {
+              days.push(i);
+          }
+
+          var day_idx = 0;
+
+          var day_interval = setInterval(function() {
+            update(days[day_idx]);
+
+            day_idx++;
+
+            if(day_idx >= days.length) {
+                clearInterval(day_interval);
+            }
+          }, 20);
+
+
+          // Add x axis
+          d3.select("svg")
+            .append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(hour_axis);
+
+          // Add y axis
+          d3.select("svg")
+            .append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + margin + ",0)")
+            .call(price_axis);
+
+        };
+
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+
+  //Read the data
+  d3.tsv("dailyPrices.tsv", function(d) {
+      d['day'] = +d['day'];
+      d['price'] = +d['price'];
+      return d;
+  }, draw);
+  </script>
+</body>
+</html>
